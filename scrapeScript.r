@@ -6,7 +6,7 @@ library(httr)
 ua <- 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:72.0) Gecko/20100101 Firefox/72.0'
 
 # specify top level url to scrape
-url <- html_session('https://www.psychologytoday.com/us/therapists/profile-listings/montana')
+url <- 'https://www.psychologytoday.com/us/therapists/profile-listings/montana'
 url_session <- html_session('https://www.psychologytoday.com/us/therapists/profile-listings/montana', user_agent(ua))
 
 # build function to find HTML attribute for pagination
@@ -80,6 +80,7 @@ longitude <- function(html) {
   as.numeric()
 }
 
+#pull specialties of each therapist
 specialty <- function(html) {
   html %>%
   html_nodes('.top-border li') %>%
@@ -99,21 +100,32 @@ get_data_table <- function(html){
                               locality = localities)
 }
 
+#reads in html
 get_data_from_url <- function(url) {
    html <- read_html(url)
    get_data_table(html)
 }
 
-scraper <- function(url) {
-  pages %>%
-        # Apply to all URLs
-        map(get_data_from_url) %>%
-        # Combine the tibbles into one tibble
-        bind_rows() %>%
-        # Write a tab-separated file
-        write_tsv(str_c(therapists,'.tsv'))
-    }
 
+#build scraper function
+scraper <- function(url) {
+  # Read first page
+     page <- read_html(url)
+  #    #generate list of URL endings
+     url_endings <- get_pages(page)
+
+     #add each of these URL endings to the end of the main URL
+     list_of_pages <- str_c(url, '/', url_endings)
+
+     list_of_pages %>%
+        # Apply to all URLs
+  #       map(get_data_from_url) %>%
+  #       # Combine the tibbles into one tibble
+  #       bind_rows()
+}
+
+#scrape urls
+scraper(url)
 
 ### access as HTML session ###
 a <- html_session('https://www.psychologytoday.com/us/therapists/profile-listings/montana/a', user_agent(ua))
