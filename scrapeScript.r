@@ -1,13 +1,17 @@
-library(rvest)
-library(tidyverse)
-library(httr)
+    library(tidyverse)
+    library(rvest)
+    library(stringr)
+    library(rebus)
+    library(lubridate)
+    library(httr)
+    library(purrr)
 
-# get user agent for accessing the site
+# get user agent for establishing a browsing session on the site
 ua <- 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:72.0) Gecko/20100101 Firefox/72.0'
 
 # specify top level url to scrape
 url <- 'https://www.psychologytoday.com/us/therapists/profile-listings/montana'
-url_session <- html_session('https://www.psychologytoday.com/us/therapists/profile-listings/montana', user_agent(ua))
+url_session <- read_html('https://www.psychologytoday.com/us/therapists/profile-listings/montana')
 
 # build function to find HTML attribute for pagination
 get_pages <- function(html){
@@ -35,16 +39,19 @@ number_of_pages <- 26
 # get names of each therapist
 name <- function(html) {
   html %>%
+  {if(length(html_nodes('.listing-title > h2')) == 0) NA
+    else
   # The relevant tag
-  html_nodes('.listing-title > h2') %>%
+  html_nodes('.listing-title > h2')} %>%
   #convert to text
   html_text()
 }
 
 # get title of each therapist
-title <- function(html) {
-  html %>%
-  html_nodes('.bestField') %>%
+titles <- function(html) {
+  {if(length(html_nodes('.bestField')) == 0) NA
+    else
+    html_nodes('.bestField')} %>%
   #convert to text
   html_text()
 }
@@ -87,18 +94,25 @@ specialty <- function(html) {
   html_text
 }
 
-# put all functions into a tibble
+# put all results into a dataframe
 get_data_table <- function(html){
-  # Extract the Basic information from the HTML
-      names <- name(html)
-      titles <- title(html)
-      localities <- locality(html)
 
-      #combine together
-      combined_data <- tibble(name = names,
-                              title = titles,
-                              locality = localities)
-}
+     # Extract the Basic information from the HTML
+     names <- name(html)
+     tites <- titles(html)
+     # localities <- locality(html)
+     #
+     # # Combine into a tibble
+     combined_data <- data.frame(therapist = names,
+                             type = tites)
+     #                         rating = ratings,
+     #                         review = reviews)
+     #
+     # # Tag the individual data with the company name
+     # combined_data %>%
+     #   mutate(company = company_name) %>%
+     #   select(company, reviewer, date, rating, review)
+   }
 
 #reads in html
 get_data_from_url <- function(url) {
@@ -118,16 +132,16 @@ scraper <- function(url) {
      list_of_pages <- str_c(url, '/', url_endings)
 
      list_of_pages %>%
-        # Apply to all URLs
-  #       map(get_data_from_url) %>%
-  #       # Combine the tibbles into one tibble
-  #       bind_rows()
+        #Apply to all URLs
+        map(get_data_from_url)
+        # Combine the tibbles into one tibble
+        # bind_rows()
 }
 
 #scrape urls
 scraper(url)
 
-### access as HTML session ###
-a <- html_session('https://www.psychologytoday.com/us/therapists/profile-listings/montana/a', user_agent(ua))
+### URLS and scratch paper###
+a <- 'https://www.psychologytoday.com/us/therapists/profile-listings/montana/a'
 single_page <- read_html('https://www.psychologytoday.com/us/therapists/wellspring-counseling-family-services-helena-mt/477231')
 single_page1 <- read_html('https://www.psychologytoday.com/us/therapists/susan-k-allen-missoula-mt/239461')
